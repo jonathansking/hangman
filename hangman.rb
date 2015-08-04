@@ -1,4 +1,9 @@
+require "yaml"
+
 class Game
+  attr_accessor :word, :correct_letters, :incorrect_letters,
+                :incorrect_guesses_remaining
+
   def initialize
     @word = ""
     @correct_letters = []
@@ -9,7 +14,6 @@ class Game
 
   def start_game
     select_word
-    puts @word
     before_game
     until game_over?
       display_guesses_and_letters
@@ -31,6 +35,14 @@ class Game
     puts "-----------------------"
     puts "Hangman"
     puts "-----------------------"
+    ask_if_load_game
+  end
+
+  def ask_if_load_game
+    puts "\nLoad a saved game? (Y/N)"
+    answer = gets.chomp
+    answer.downcase!
+    load_game if answer == "y"
   end
 
   def display_guesses_and_letters
@@ -44,10 +56,10 @@ class Game
   end
 
   def next_guess
-    puts "\nChoose a letter:"
+    puts "\nChoose a letter or type 'save' to save:"
     letter = gets.chomp
     letter.downcase!
-    check_guess(letter)
+    letter == "save" ? save_game : check_guess(letter)
   end
 
   def check_guess(letter)
@@ -64,9 +76,26 @@ class Game
   end
 
   def save_game
+    yaml = YAML::dump(self)
+    save_file = File.open("saved_game.yaml", "w")
+    save_file.write(yaml)
+    save_file.close
+    puts "\nGame saved"
   end
 
   def load_game
+    save_file = File.open("saved_game.yaml", "r")
+    yaml = save_file.read
+    saved_vars = YAML::load(yaml)
+    load_vars(saved_vars)
+    save_file.close
+  end
+
+  def load_vars(saved_vars)
+    @word = saved_vars.word
+    @correct_letters = saved_vars.correct_letters
+    @incorrect_letters = saved_vars.incorrect_letters
+    @incorrect_guesses_remaining = saved_vars.incorrect_guesses_remaining
   end
 
   def game_over?
